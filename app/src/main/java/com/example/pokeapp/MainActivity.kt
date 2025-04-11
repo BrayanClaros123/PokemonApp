@@ -10,26 +10,16 @@ import androidx.navigation.compose.rememberNavController
 import com.example.pokeapp.ui.PokemonDetailScreen
 import com.example.pokeapp.ui.PokemonListScreen
 import com.example.pokeapp.ui.splash.SplashScreen
-import com.example.pokeapp.viewmodel.PokemonViewModel
+import com.example.pokeapp.nav.NavGraph
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
-            val pokemonViewModel: PokemonViewModel = viewModel()
-
-            NavHost(navController, startDestination = "splash") {
-                composable("splash") { SplashScreen(navController, pokemonViewModel) }
-                composable("pokemonList") { PokemonListScreen(navController, pokemonViewModel) }
-                composable("pokemonDetail/{pokemonId}") { backStackEntry ->
-                    PokemonDetailScreen(
-                        pokemonId = backStackEntry.arguments?.getString("pokemonId"),
-                        onBackPressed = { navController.popBackStack() }
-                    )
-                }
-
-            }
+            NavGraph(navController = navController)
         }
     }
 }

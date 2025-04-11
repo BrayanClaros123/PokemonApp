@@ -23,26 +23,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
+import com.example.pokeapp.modelviewintent.list.PokemonListViewModel
 import com.example.pokeapp.ui.pokemon.PokemonTypePill
 import com.example.pokeapp.ui.pokemon.TypeFilterDropdown
-import com.example.pokeapp.viewmodel.PokemonViewModel
-import com.example.pokeapp.viewmodel.`is`.PokemonIntent
-import com.example.pokeapp.viewmodel.`is`.PokemonState
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
+import com.example.pokeapp.modelviewintent.list.PokemonListState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PokemonListScreen(navController: NavController, pokemonViewModel: PokemonViewModel = viewModel()) {
+fun PokemonListScreen(state: PokemonListState,
+                      onLoadPokemons: () -> Unit,
+                      onPokemonClick: (Int) -> Unit,
+                      viewModel: PokemonListViewModel = hiltViewModel()) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf<String?>(null) }
     var expanded by remember { mutableStateOf(false) }
-    val state by pokemonViewModel.state.collectAsState()
 
     val transition = rememberInfiniteTransition()
     val shimmerColor by transition.animateColor(
@@ -69,16 +65,18 @@ fun PokemonListScreen(navController: NavController, pokemonViewModel: PokemonVie
     )
 
     LaunchedEffect(Unit) {
-        pokemonViewModel.handleIntent(PokemonIntent.LoadPokemons)
+        onLoadPokemons()
     }
 
+    val listState = rememberLazyListState()
+
     when (state) {
-        is PokemonState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        is PokemonListState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
-        is PokemonState.Error -> Text(text = "Error: ${(state as PokemonState.Error).message}")
-        is PokemonState.Success -> {
-            val pokemonList = (state as PokemonState.Success).pokemons
+        is PokemonListState.Error -> Text(text = "Error: ${(state as PokemonListState.Error).message}")
+        is PokemonListState.Success -> {
+            val pokemonList = (state as PokemonListState.Success).pokemons
             val allTypes = pokemonList.flatMap { it.types ?: emptyList() }.map { it.type.name }.distinct()
             val filteredPokemonList = pokemonList.filter { pokemon ->
                 (searchQuery.isEmpty() || pokemon.name.contains(searchQuery, ignoreCase = true)) &&
@@ -136,7 +134,7 @@ fun PokemonListScreen(navController: NavController, pokemonViewModel: PokemonVie
                         onTypeSelected = { selectedType = it }
                     )
                 }
-                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                LazyColumn(state = listState, modifier = Modifier.fillMaxWidth()) {
                     items(filteredPokemonList) { pokemon ->
                         Card(
                             modifier = Modifier
@@ -153,7 +151,7 @@ fun PokemonListScreen(navController: NavController, pokemonViewModel: PokemonVie
                                     ),
                                     shape = MaterialTheme.shapes.medium
                                 )
-                                .clickable { navController.navigate("pokemonDetail/${pokemon.id}") },
+                                .clickable { onPokemonClick(pokemon.id) },
                             elevation = CardDefaults.cardElevation(4.dp)
                         ) {
                             Box(
@@ -219,9 +217,9 @@ fun PokemonListScreen(navController: NavController, pokemonViewModel: PokemonVie
                     }
 
                     item {
-                        if (state is PokemonState.Success && filteredPokemonList.isNotEmpty()) {
+                        if (state is PokemonListState.Success && filteredPokemonList.isNotEmpty()) {
                             LaunchedEffect(Unit) {
-                                pokemonViewModel.handleIntent(PokemonIntent.LoadPokemons)
+                                onLoadPokemons()
                             }
                             Box(
                                 modifier = Modifier

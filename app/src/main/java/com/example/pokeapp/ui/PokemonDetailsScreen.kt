@@ -15,30 +15,28 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pokeapp.ui.pokemon.PokemonTypeColors
-import com.example.pokeapp.viewmodel.`is`.PokemonIntent
-import com.example.pokeapp.viewmodel.`is`.PokemonState
-import com.example.pokeapp.viewmodel.PokemonViewModel
 import com.skydoves.landscapist.glide.GlideImage
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.pokeapp.modelviewintent.detail.PokemonDetailState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PokemonDetailScreen(pokemonId: String?, pokemonViewModel: PokemonViewModel = viewModel(), onBackPressed: () -> Unit) {
+fun PokemonDetailScreen(
+    pokemonId: String?,
+    state: PokemonDetailState,
+    onLoadDetails: (String) -> Unit,
+    onBackPressed: () -> Unit
+) {
     LaunchedEffect(pokemonId) {
-        if (pokemonId != null) {
-            pokemonViewModel.handleIntent(PokemonIntent.SelectPokemon(pokemonId))
-        }
+        pokemonId?.let { onLoadDetails(it) }
     }
 
-    val state by pokemonViewModel.state.collectAsState()
-    var pokemonDetails by remember { mutableStateOf<PokemonState.Selected?>(null) }
+    var pokemonDetails by remember { mutableStateOf<PokemonDetailState.Success?>(null) }
 
-    if (state is PokemonState.Selected) {
-        pokemonDetails = state as PokemonState.Selected
+    if (state is PokemonDetailState.Success) {
+        pokemonDetails = state as PokemonDetailState.Success
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -63,15 +61,15 @@ fun PokemonDetailScreen(pokemonId: String?, pokemonViewModel: PokemonViewModel =
                 .padding(16.dp)
         ) {
             when {
-                state is PokemonState.Loading -> Box(
+                state is PokemonDetailState.Loading -> Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
                 }
 
-                state is PokemonState.Error -> Text(
-                    text = "Error: ${(state as PokemonState.Error).message}",
+                state is PokemonDetailState.Error -> Text(
+                    text = "Error: ${(state as PokemonDetailState.Error).message}",
                     color = Color.Red
                 )
 
@@ -141,7 +139,8 @@ fun PokemonDetailScreen(pokemonId: String?, pokemonViewModel: PokemonViewModel =
                             Text(
                                 text = description,
                                 fontStyle = FontStyle.Italic,
-                                color = Color.Black
+                                color = Color.Black,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))

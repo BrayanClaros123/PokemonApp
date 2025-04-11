@@ -1,5 +1,6 @@
 package com.example.pokeapp.ui.splash
 
+import android.util.Log
 import android.view.animation.OvershootInterpolator
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -15,24 +16,26 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pokeapp.R
-import com.example.pokeapp.viewmodel.`is`.PokemonIntent
-import com.example.pokeapp.viewmodel.`is`.PokemonState
-import com.example.pokeapp.viewmodel.PokemonViewModel
+import com.example.pokeapp.modelviewintent.list.PokemonListIntent
+import com.example.pokeapp.modelviewintent.list.PokemonListState
+import com.example.pokeapp.modelviewintent.list.PokemonListViewModel
 
 @Composable
-fun SplashScreen(navController: NavController, pokemonViewModel: PokemonViewModel = viewModel()) {
+fun SplashScreen(navController: NavController) {
+    val pokemonViewModel: PokemonListViewModel = hiltViewModel()
     val scale = remember { Animatable(0f) }
     val state by pokemonViewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
-        pokemonViewModel.handleIntent(PokemonIntent.LoadPokemons)
+        pokemonViewModel.handleIntent(PokemonListIntent.LoadPokemons)
     }
 
     LaunchedEffect(state) {
-        if (state is PokemonState.Success) {
+        if (state is PokemonListState.Success) {
             navController.navigate("pokemonList") {
                 popUpTo("splash") { inclusive = true }
             }
